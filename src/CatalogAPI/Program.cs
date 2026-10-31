@@ -99,4 +99,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "CatalogAPI" }));
 
+// Popula o catálogo com jogos de exemplo (idempotente: só insere se estiver vazio).
+await CatalogSeeder.SeedAsync(app.Services);
+
 app.Run();
