@@ -24,15 +24,25 @@ fluxo de compra**. Publica `OrderPlacedEvent` e consome `PaymentProcessedEvent`.
 |--------|-----------------------|------|------------------------------------------------------|
 | GET    | `/api/games`          | não  | Lista jogos                                          |
 | GET    | `/api/games/{id}`     | não  | Obtém um jogo                                        |
-| POST   | `/api/games`          | sim  | Cria um jogo                                         |
-| PUT    | `/api/games/{id}`     | sim  | Atualiza um jogo                                     |
-| DELETE | `/api/games/{id}`     | sim  | Remove um jogo                                       |
+| POST   | `/api/games`          | admin | Cria um jogo                                        |
+| PUT    | `/api/games/{id}`     | admin | Atualiza um jogo                                    |
+| DELETE | `/api/games/{id}`     | admin | Remove um jogo                                      |
 | POST   | `/api/purchases`      | sim  | Inicia a compra (publica `OrderPlacedEvent`)         |
 | GET    | `/api/library`        | sim  | Lista a biblioteca do usuário autenticado            |
 | GET    | `/health`             | não  | Health check                                         |
+| GET    | `/swagger`            | não  | Swagger UI                                           |
 | GET    | `/scalar/v1`          | não  | Documentação interativa (OpenAPI)                    |
 
 > Endpoints autenticados exigem o header `Authorization: Bearer <token>` obtido no login da UsersAPI.
+> Os marcados como **admin** exigem, além disso, o papel `administrator` (o usuário `admin@fcg.com`
+> é criado pelo UsersAPI na subida); um usuário comum recebe `403 Forbidden`.
+
+## Dados de exemplo (seed)
+
+Na subida, o serviço insere um conjunto de jogos de exemplo (FPS, RPG, plataforma, puzzle etc.) para
+que `GET /api/games` já retorne dados, mesmo que nenhum jogo tenha sido cadastrado por um administrador.
+O seed é **idempotente**: compara por título, insere apenas os que ainda não existem e nunca remove
+nem sobrescreve jogos criados via API. O código está em `src/CatalogAPI/Data/CatalogSeeder.cs`.
 
 ### Exemplo: comprar um jogo
 
@@ -58,7 +68,10 @@ curl -X POST http://localhost:5002/api/purchases \
 
 ## Banco de dados (migrations)
 
-O banco **não** é criado automaticamente. Script SQL idempotente pronto em [`db/init.sql`](db/init.sql):
+Ao rodar a stack completa com o `docker-compose.yml` do repositório
+[`fcg-orchestration`](https://github.com/R-A-Medeiros/fcg-orchestration), o banco e as tabelas são
+criados automaticamente na primeira subida do Postgres. Rodando o serviço isoladamente, o banco
+**não** é criado automaticamente. Script SQL idempotente pronto em [`db/init.sql`](db/init.sql):
 
 ```bash
 psql -h localhost -U postgres -c "CREATE DATABASE fcg_catalog;"
@@ -78,6 +91,9 @@ dotnet run --project src/CatalogAPI
 ```bash
 docker build -t fcg/catalog-api:latest .
 ```
+
+Para subir a aplicação completa (todos os serviços, PostgreSQL e RabbitMQ), use o
+`docker-compose.yml` do repositório [`fcg-orchestration`](https://github.com/R-A-Medeiros/fcg-orchestration).
 
 ## Kubernetes
 
